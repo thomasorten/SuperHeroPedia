@@ -8,8 +8,9 @@
 
 #import "ViewController.h"
 
-@interface ViewController ()
-
+@interface ViewController () <UITableViewDataSource, UITableViewDelegate>
+@property NSArray *superheros;
+@property (weak, nonatomic) IBOutlet UITableView *superHeroTableView;
 @end
 
 @implementation ViewController
@@ -17,13 +18,39 @@
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-	// Do any additional setup after loading the view, typically from a nib.
+    
+    NSURL *url = [NSURL URLWithString:@"https://s3.amazonaws.com/mobile-makers-lib/superheroes.json"];
+    NSURLRequest *request = [NSURLRequest requestWithURL:url];
+    
+    [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
+        self.superheros = [NSJSONSerialization JSONObjectWithData:data options:NSJSONReadingAllowFragments error:&connectionError];
+        [self.superHeroTableView reloadData];
+    }];
 }
 
-- (void)didReceiveMemoryWarning
+#pragma mark UITableViewDataSource
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+    return self.superheros.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    NSDictionary *superhero = [self.superheros objectAtIndex:indexPath.row];
+    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"MySuperHeroCellID"];
+    NSURL *imageUrl = [NSURL URLWithString:superhero[@"avatar_url"]];
+    
+    cell.textLabel.text = superhero[@"name"];
+    cell.detailTextLabel.text = superhero[@"description"];
+    cell.imageView.image = [UIImage imageWithData:[NSData dataWithContentsOfURL:imageUrl]];
+    
+    return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 72.0;
 }
 
 @end
